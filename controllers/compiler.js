@@ -2,7 +2,7 @@ const vm = require('vm');
 
 const run = async (req, res) => {
     if(!req.query.code)
-        res.status(400).json({
+        return res.status(400).json({
             state: 'Missing required parameter',
             error: 'Code parameter is required'
         });
@@ -27,16 +27,16 @@ const run = async (req, res) => {
         displayErrors: true,
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         state: 'Success',
         output: internalLogs
       });
     } catch (err) {
       const lineOfError = err.stack
         .split('evalmachine.<anonymous>:')[1]
-        .substring(0, 1);
+        .split('\n')[0]
       const errorMsg = `${err.message} at line ${lineOfError}`;
-      res.status(400).json({
+      return res.status(400).json({
         state: 'Failed',
         error: errorMsg
       });
