@@ -1,0 +1,15 @@
+{
+  "name": "js-compiler-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "Atil Mohamed El Amine",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
+}
