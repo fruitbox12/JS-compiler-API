@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const compilerRouter = require('./routes/compiler');
+const compilerRouter = require('./api/compiler');
 const notFound = require('./middleware/not-found');
 
 // middleware
