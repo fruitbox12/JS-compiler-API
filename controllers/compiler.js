@@ -1,10 +1,10 @@
 const vm = require('vm');
 
 // Import the modules that you want to be accessible within the VM
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios'); // Import axios
-const fetch = require('node-fetch'); // Import node-fetch to simulate fetch in Node.js
+const fs = import('fs');
+const path = import('path');
+const axios = import('axios'); // Import axios
+const fetch = import('node-fetch'); // Import node-fetch to simulate fetch in Node.js
 
 const run = async (req, res) => {
     if (!req.query.code)
