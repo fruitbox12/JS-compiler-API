@@ -1,29 +1,27 @@
-const vm = require('vm');
-
-// Import the modules that you want to be accessible within the VM
-const fs = import('fs');
-const path = import('path');
-const axios = import('axios'); // Import axios
-const fetch = import('node-fetch'); // Import node-fetch to simulate fetch in Node.js
+const { NodeVM } = require('vm2');
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const fetch = require('node-fetch');
 
 const run = async (req, res) => {
-    if (!req.query.code)
+    if (!req.query.code) {
         return res.status(400).json({
             state: 'Missing required parameter',
             error: 'Code parameter is required'
         });
+    }
 
     const internalLogs = [];
 
-    // Prepare the context with access to console, and selected Node.js modules
-    const context = {
+    // Prepare the sandbox with console and selected Node.js modules
+    const sandbox = {
         console: {
-            log: (value) => {
-                internalLogs.push(value);
-            },
+            log: (...value) => {
+                internalLogs.push(...value);
+            }
         },
-        require: (moduleName) => {
-            // Restrict the modules that can be required
+        require: moduleName => {
             if (['fs', 'path', 'axios', 'fetch'].includes(moduleName)) {
                 switch (moduleName) {
                     case 'fs':
@@ -41,33 +39,37 @@ const run = async (req, res) => {
             throw new Error(`Module '${moduleName}' is not permitted`);
         }
     };
-    vm.createContext(context);
+
+    const vm = new NodeVM({
+        console: 'redirect',
+        sandbox,
+        require: {
+            external: true,
+            builtin: ['fs', 'path'],
+            mock: {
+                axios: axios,
+                fetch: fetch
+            }
+        }
+    });
 
     try {
-        const script = new vm.Script(req.query.code);
+        // Run the user provided code safely
+        const script = new vm.Script(`module.exports = async () => { ${req.query.code} }();`);
+        const result = await vm.run(script, __dirname);
 
-        // Run the script within the configured context
-        script.runInContext(context, {
-            lineOffset: 0,
-            displayErrors: true,
-        });
-
-        return res.status(200).json({
+        res.status(200).json({
             state: 'Success',
-            output: internalLogs
+            output: internalLogs,
+            result: result
         });
     } catch (err) {
-        const lineOfError = err.stack
-            .split('evalmachine.<anonymous>:')[1]
-            .split('\n')[0];
-        const errorMsg = `${err.message} at line ${lineOfError}`;
-        return res.status(400).json({
+        const lineOfError = err.stack.split('VMError:')[1] || err.stack;
+        res.status(400).json({
             state: 'Failed',
-            error: errorMsg
+            error: `Error: ${err.message} at ${lineOfError}`
         });
     }
-}
+};
 
-module.exports = {
-    run
-}
+module.exports = { run };
