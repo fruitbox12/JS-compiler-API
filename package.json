@@ -15,5 +15,6 @@
     "node-fetch": "latest",
     "fs": "latest"
     
-  }
+  },
+  "type": "module"
 }
