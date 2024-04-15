@@ -13,7 +13,8 @@
     "express": "^4.18.1",
     "axios": "latest",
     "node-fetch": "latest",
-    "fs": "latest"
+    "fs": "latest",
+    "vm2": "latest"
     
   },
   "type": "module"
