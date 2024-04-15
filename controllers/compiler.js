@@ -1,18 +1,17 @@
 const vm = require('vm');
 
-// Correctly require the necessary Node.js modules
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-const fetch = require('node-fetch');  // Assuming 'node-fetch' is correctly installed
+// Import the modules that you want to be accessible within the VM
+const fs = import('fs');
+const path = import('path');
+const axios = import('axios'); // Import axios
+const fetch = import('node-fetch'); // Import node-fetch to simulate fetch in Node.js
 
 const run = async (req, res) => {
-    if (!req.query.code) {
+    if (!req.query.code)
         return res.status(400).json({
             state: 'Missing required parameter',
             error: 'Code parameter is required'
         });
-    }
 
     const internalLogs = [];
 
@@ -42,7 +41,6 @@ const run = async (req, res) => {
             throw new Error(`Module '${moduleName}' is not permitted`);
         }
     };
-
     vm.createContext(context);
 
     try {
@@ -68,8 +66,8 @@ const run = async (req, res) => {
             error: errorMsg
         });
     }
-};
+}
 
 module.exports = {
     run
-};
+}
