@@ -1,18 +1,24 @@
-const vm = require('vm');
+import vm from 'vm';
 
-// Import the modules that you want to be accessible within the VM
-const fs = import('fs');
-const path = import('path');
-const axios = import('axios'); // Import axios
-const fetch = import('node-fetch'); // Import node-fetch to simulate fetch in Node.js
+// Asynchronously import the necessary modules
+const setupModules = async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+    const axios = await import('axios');
+    const fetch = await import('node-fetch');
+
+    return { fs, path, axios, fetch };
+};
 
 const run = async (req, res) => {
-    if (!req.query.code)
+    if (!req.query.code) {
         return res.status(400).json({
             state: 'Missing required parameter',
             error: 'Code parameter is required'
         });
+    }
 
+    const { fs, path, axios, fetch } = await setupModules();
     const internalLogs = [];
 
     // Prepare the context with access to console, and selected Node.js modules
@@ -20,33 +26,23 @@ const run = async (req, res) => {
         console: {
             log: (value) => {
                 internalLogs.push(value);
-            },
+            }
         },
         require: (moduleName) => {
-            // Restrict the modules that can be required
-            if (['fs', 'path', 'axios', 'fetch'].includes(moduleName)) {
-                switch (moduleName) {
-                    case 'fs':
-                        return fs;
-                    case 'path':
-                        return path;
-                    case 'axios':
-                        return axios;
-                    case 'fetch':
-                        return fetch;
-                    default:
-                        throw new Error(`Module '${moduleName}' is not permitted`);
-                }
+            // Map module names to their corresponding imports
+            const modules = { fs, path, axios, fetch };
+            if (modules[moduleName]) {
+                return modules[moduleName];
             }
             throw new Error(`Module '${moduleName}' is not permitted`);
         }
     };
-    vm.createContext(context);
+
+    vm.createContext(context); // Create a VM context with the prepared sandbox
 
     try {
+        // Execute the code within the VM
         const script = new vm.Script(req.query.code);
-
-        // Run the script within the configured context
         script.runInContext(context, {
             lineOffset: 0,
             displayErrors: true,
@@ -57,9 +53,7 @@ const run = async (req, res) => {
             output: internalLogs
         });
     } catch (err) {
-        const lineOfError = err.stack
-            .split('evalmachine.<anonymous>:')[1]
-            .split('\n')[0];
+        const lineOfError = err.stack.split('evalmachine.<anonymous>:')[1].split('\n')[0];
         const errorMsg = `${err.message} at line ${lineOfError}`;
         return res.status(400).json({
             state: 'Failed',
@@ -68,6 +62,4 @@ const run = async (req, res) => {
     }
 }
 
-module.exports = {
-    run
-}
+export { run }; // Use ES Module export syntax
