@@ -1,8 +1,11 @@
-const { NodeVM } = require('vm2');
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-const fetch = require('node-fetch');
+// Import statements with ES Module syntax
+import { NodeVM } from 'vm2';
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
+
+// Async dynamic import for node-fetch due to its ESM-only nature
+const fetchPromise = import('node-fetch').then(mod => mod.default);
 
 const run = async (req, res) => {
     if (!req.query.code) {
@@ -12,6 +15,7 @@ const run = async (req, res) => {
         });
     }
 
+    const fetch = await fetchPromise; // Ensure fetch is loaded
     const internalLogs = [];
 
     // Prepare the sandbox with console and selected Node.js modules
@@ -22,21 +26,18 @@ const run = async (req, res) => {
             }
         },
         require: moduleName => {
-            if (['fs', 'path', 'axios', 'fetch'].includes(moduleName)) {
-                switch (moduleName) {
-                    case 'fs':
-                        return fs;
-                    case 'path':
-                        return path;
-                    case 'axios':
-                        return axios;
-                    case 'fetch':
-                        return fetch;
-                    default:
-                        throw new Error(`Module '${moduleName}' is not permitted`);
-                }
+            switch (moduleName) {
+                case 'fs':
+                    return fs;
+                case 'path':
+                    return path;
+                case 'axios':
+                    return axios;
+                case 'fetch':
+                    return fetch;
+                default:
+                    throw new Error(`Module '${moduleName}' is not permitted`);
             }
-            throw new Error(`Module '${moduleName}' is not permitted`);
         }
     };
 
@@ -72,4 +73,4 @@ const run = async (req, res) => {
     }
 };
 
-module.exports = { run };
+export { run };
