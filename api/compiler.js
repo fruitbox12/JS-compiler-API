@@ -5,6 +5,6 @@ const {
   run
 } = require('../controllers/compiler');
 
-router.route('/').get(run);
+router.route('/').post(run);
 
 module.exports = router;
