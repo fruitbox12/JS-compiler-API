@@ -6,7 +6,11 @@ const http = require('http');
 const https = require('https');
 
 async function setupModules(externalModules = []) {
-    // Setup basic modules plus http and https which axios might rely on
+    // Ensure externalModules is always treated as an array
+    if (!Array.isArray(externalModules)) {
+        externalModules = [];  // Set to empty array if not an array
+    }
+
     const modules = { fs, path, axios, http, https };
     for (const moduleName of externalModules) {
         if (!modules[moduleName]) {
@@ -19,6 +23,7 @@ async function setupModules(externalModules = []) {
     }
     return modules;
 }
+
 
 async function createContext(externalModules) {
     const moduleMap = await setupModules(externalModules);
