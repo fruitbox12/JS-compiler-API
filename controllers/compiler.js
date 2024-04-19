@@ -58,3 +58,4 @@ async function run(code, externalModules = []) {
         console.error('Error executing script:', err);
     }
 }
+module.exports = { run };
