@@ -1,12 +1,12 @@
 const vm = require('vm');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');  // Import axios globally if it's commonly used.
+const axios = require('axios');
 
 async function setupModules(externalModules = []) {
-    const modules = { fs, path, axios }; // Axios is now a default part of the context.
+    const modules = { fs, path, axios };
     for (const moduleName of externalModules) {
-        if (!modules[moduleName]) { // Prevent re-importing axios or core modules.
+        if (!modules[moduleName]) {
             try {
                 modules[moduleName] = await import(moduleName);
             } catch (error) {
@@ -36,7 +36,7 @@ async function createContext(externalModules) {
 
 async function run(req, res) {
     if (!req.body.code) {
-        return res.status(400).json({ error: 'Missing required parameter: Code is required' });
+        return res.status(400).json({ error: 'Code is required' });
     }
 
     let externalModules = [];
@@ -50,11 +50,10 @@ async function run(req, res) {
     vm.createContext(context);
 
     try {
-        const script = new vm.Script(`module.exports = async function() {${req.body.code}}();`);
+        const script = new vm.Script(`(async () => {${req.body.code}})();`);
         const responseData = await script.runInContext(context, { lineOffset: 0, displayErrors: true });
         return res.status(200).json({ output: responseData });
     } catch (err) {
-        // Improved error handling
         const stack = err.stack || '';
         const lineOfError = stack.includes('evalmachine.<anonymous>:') ? stack.split('evalmachine.<anonymous>:')[1].split('\n')[0] : 'Error executing script';
         const errorMsg = `${err.message} at line ${lineOfError}`;
@@ -62,6 +61,4 @@ async function run(req, res) {
     }
 };
 
-
-
-module.exports = { run }; // Use CommonJS export syntax
+module.exports = { run };
