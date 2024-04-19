@@ -1,19 +1,12 @@
 const vm = require('vm');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
-const http = require('http');
-const https = require('https');
+const axios = require('axios');  // Import axios globally if it's commonly used.
 
 async function setupModules(externalModules = []) {
-    // Ensure externalModules is always treated as an array
-    if (!Array.isArray(externalModules)) {
-        externalModules = [];  // Set to empty array if not an array
-    }
-
-    const modules = { fs, path, axios, http, https };
+    const modules = { fs, path, axios }; // Axios is now a default part of the context.
     for (const moduleName of externalModules) {
-        if (!modules[moduleName]) {
+        if (!modules[moduleName]) { // Prevent re-importing axios or core modules.
             try {
                 modules[moduleName] = await import(moduleName);
             } catch (error) {
@@ -24,12 +17,11 @@ async function setupModules(externalModules = []) {
     return modules;
 }
 
-
 async function createContext(externalModules) {
     const moduleMap = await setupModules(externalModules);
     const internalLogs = [];
 
-    const sandbox = {
+    return {
         console: { log: (value) => internalLogs.push(value) },
         require: (moduleName) => {
             if (moduleMap[moduleName]) {
@@ -38,29 +30,38 @@ async function createContext(externalModules) {
             throw new Error(`Module '${moduleName}' is not permitted`);
         },
         module: { exports: {} },
-        exports: {},
-        process,
-        Buffer,
-        setTimeout,
-        clearTimeout,
-        setInterval,
-        clearInterval,
-        setImmediate,
-        clearImmediate
+        exports: {}
     };
-
-    return vm.createContext(sandbox); // Create and return the VM context
 }
 
-async function run(code, externalModules = []) {
+async function run(req, res) {
+    if (!req.body.code) {
+        return res.status(400).json({ error: 'Missing required parameter: Code is required' });
+    }
+
+    let externalModules = [];
+    try {
+        externalModules = req.body.external ? JSON.parse(req.body.external) : [];
+    } catch (error) {
+        return res.status(400).json({ error: 'Invalid external modules format' });
+    }
+
     const context = await createContext(externalModules);
+    vm.createContext(context);
 
     try {
-        const script = new vm.Script(`(async () => {${code}})();`, { timeout: 5000 }); // Set a timeout for security
-        const responseData = await script.runInContext(context, { displayErrors: true, timeout: 5000 });
-        console.log('Execution Result:', responseData);
+        const script = new vm.Script(`module.exports = async function() {${req.body.code}}();`);
+        const responseData = await script.runInContext(context, { lineOffset: 0, displayErrors: true });
+        return res.status(200).json({ output: responseData });
     } catch (err) {
-        console.error('Error executing script:', err);
+        // Improved error handling
+        const stack = err.stack || '';
+        const lineOfError = stack.includes('evalmachine.<anonymous>:') ? stack.split('evalmachine.<anonymous>:')[1].split('\n')[0] : 'Error executing script';
+        const errorMsg = `${err.message} at line ${lineOfError}`;
+        return res.status(400).json({ error: errorMsg });
     }
-}
-module.exports = { run };
+};
+
+
+
+module.exports = { run }; // Use CommonJS export syntax
