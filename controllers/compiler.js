@@ -1,12 +1,12 @@
-const { NodeVM } = require('vm2');
+const vm = require('vm');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios'); // Import axios globally if it's commonly used.
+const axios = require('axios');  // Import axios globally if it's commonly used.
 
 async function setupModules(externalModules = []) {
-    const modules = { fs, path, axios }; // Axios, fs, and path are now a default part of the context.
+    const modules = { fs, path, axios }; // Axios is now a default part of the context.
     for (const moduleName of externalModules) {
-        if (!modules[moduleName]) { // Prevent re-importing core modules.
+        if (!modules[moduleName]) { // Prevent re-importing axios or core modules.
             try {
                 modules[moduleName] = await import(moduleName);
             } catch (error) {
@@ -34,47 +34,34 @@ async function createContext(externalModules) {
     };
 }
 
-async function run(code, external = '[]') {
-    let externalModules;
+async function run(req, res) {
+    if (!req.body.code) {
+        return res.status(400).json({ error: 'Missing required parameter: Code is required' });
+    }
+
+    let externalModules = [];
     try {
-        console.log('Parsing external modules:', external);
-        // Check if external is already an object and handle accordingly
-        if (typeof external === 'string') {
-            externalModules = JSON.parse(external);
-        } else if (Array.isArray(external)) {
-            externalModules = external;  // If it's already an array, use it directly
-        } else {
-            throw new Error("External modules input must be a string or an array");
-        }
+        externalModules = req.body.external ? JSON.parse(req.body.external) : [];
     } catch (error) {
-        throw new Error("Failed to parse external modules: " + error.message);
+        return res.status(400).json({ error: 'Invalid external modules format' });
     }
 
-    const contextModules = await createContext(externalModules);
-
-    const options = {
-        console: 'inherit',
-        sandbox: {},
-        require: {
-            external: true,
-            builtin: ['fs', 'path', 'axios'],
-            context: 'sandbox',
-            mock: contextModules,
-        }
-    };
-
-    const vm = new NodeVM(options);
+    const context = await createContext(externalModules);
+    vm.createContext(context);
 
     try {
-        const script = `module.exports = async function() {${code}}();`;
-        const responseData = await vm.run(script, __dirname);
-        console.log('Execution Result:', responseData);
-        return responseData;
+        const script = new vm.Script(`module.exports = async function() {${req.body.code}}();`);
+        const responseData = await script.runInContext(context, { lineOffset: 0, displayErrors: true });
+        return res.status(200).json({ output: responseData });
     } catch (err) {
-        console.error('Execution Error:', err);
-        throw new Error(`Error executing script: ${err.message}`);
+        // Improved error handling
+        const stack = err.stack || '';
+        const lineOfError = stack.includes('evalmachine.<anonymous>:') ? stack.split('evalmachine.<anonymous>:')[1].split('\n')[0] : 'Error executing script';
+        const errorMsg = `${err.message} at line ${lineOfError}`;
+        return res.status(400).json({ error: errorMsg });
     }
-}
+};
+
 
 
 module.exports = { run }; // Use CommonJS export syntax
