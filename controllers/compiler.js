@@ -34,10 +34,18 @@ async function createContext(externalModules) {
     };
 }
 
-async function run(code, external = '[]') {  // default to an empty array string if not provided
+async function run(code, external = '[]') {
     let externalModules;
     try {
-        externalModules = JSON.parse(external);
+        console.log('Parsing external modules:', external);
+        // Check if external is already an object and handle accordingly
+        if (typeof external === 'string') {
+            externalModules = JSON.parse(external);
+        } else if (Array.isArray(external)) {
+            externalModules = external;  // If it's already an array, use it directly
+        } else {
+            throw new Error("External modules input must be a string or an array");
+        }
     } catch (error) {
         throw new Error("Failed to parse external modules: " + error.message);
     }
@@ -45,11 +53,11 @@ async function run(code, external = '[]') {  // default to an empty array string
     const contextModules = await createContext(externalModules);
 
     const options = {
-        console: 'inherit', // Or redirect it to capture console output
+        console: 'inherit',
         sandbox: {},
         require: {
-            external: true, // Allow all external modules, adjust based on need
-            builtin: ['fs', 'path', 'axios'], // Restrict to necessary Node built-in modules
+            external: true,
+            builtin: ['fs', 'path', 'axios'],
             context: 'sandbox',
             mock: contextModules,
         }
@@ -59,13 +67,14 @@ async function run(code, external = '[]') {  // default to an empty array string
 
     try {
         const script = `module.exports = async function() {${code}}();`;
-        const responseData = await vm.run(script, __dirname); // Execute the user-provided code
+        const responseData = await vm.run(script, __dirname);
         console.log('Execution Result:', responseData);
-        return responseData; // Returning the response data
+        return responseData;
     } catch (err) {
         console.error('Execution Error:', err);
         throw new Error(`Error executing script: ${err.message}`);
     }
 }
+
 
 module.exports = { run }; // Use CommonJS export syntax
