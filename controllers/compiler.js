@@ -3,22 +3,20 @@ const path = require('path');
 const axios = require('axios'); // Import axios globally if it's commonly used.
 const { NodeVM } = require('vm2');
 
-async function setupModules(externalModules = []) {
+async function setupModules(externalModule) {
     const modules = { fs, path, axios }; // Axios is now a default part of the context.
-    for (const moduleName of externalModules) {
-        if (!modules[moduleName]) { // Prevent re-importing axios or core modules.
-            try {
-                modules[moduleName] = require(moduleName);
-            } catch (error) {
-                console.error(`Error importing ${moduleName}:`, error);
-            }
+    if (externalModule && !modules[externalModule]) {
+        try {
+            modules[externalModule] = require(externalModule);
+        } catch (error) {
+            console.error(`Error importing ${externalModule}:`, error);
         }
     }
     return modules;
 }
 
-async function createContext(externalModules) {
-    const moduleMap = await setupModules(externalModules);
+async function createContext(externalModule) {
+    const moduleMap = await setupModules(externalModule);
     const internalLogs = [];
 
     return {
@@ -39,14 +37,14 @@ async function run(req, res) {
         return res.status(400).json({ error: 'Missing required parameter: Code is required' });
     }
 
-    let externalModules = [];
+    let externalModule = '';
     try {
-        externalModules = req.body.external ? JSON.parse(req.body.external) : [];
+        externalModule = req.body.external ? JSON.parse(req.body.external) : '';
     } catch (error) {
-        return res.status(400).json({ error: 'Invalid external modules format' });
+        return res.status(400).json({ error: 'Invalid external module format' });
     }
 
-    const context = await createContext(externalModules);
+    const context = await createContext(externalModule);
 
     const options = {
         console: 'inherit',
@@ -57,9 +55,9 @@ async function run(req, res) {
         }
     };
 
-    if (externalModules.length > 0) {
+    if (externalModule) {
         options.require.external = {
-            modules: externalModules
+            modules: [externalModule]
         };
     }
 
