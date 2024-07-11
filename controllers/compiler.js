@@ -65,7 +65,16 @@ async function run(req, res) {
         // Wrap code in a module
         const code = `module.exports = async function() {${req.body.code}}();`;
         const responseData = await vm.run(code, __dirname);
-        return res.status(200).json({ output: responseData });
+
+        // Transform the axios response to avoid circular structure issues
+        const transformedResponse = JSON.parse(JSON.stringify(responseData, (key, value) => {
+            if (key === 'request' || key === 'config') {
+                return undefined;
+            }
+            return value;
+        }));
+
+        return res.status(200).json({ output: transformedResponse });
     } catch (err) {
         // Improved error handling
         const stack = err.stack || '';
