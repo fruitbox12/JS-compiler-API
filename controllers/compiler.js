@@ -2,6 +2,7 @@ const vm = require('vm');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');  // Import axios globally if it's commonly used.
+const { NodeVM } = require('vm2');
 
 async function setupModules(externalModules = []) {
     const modules = { fs, path, axios }; // Axios is now a default part of the context.
@@ -47,7 +48,23 @@ async function run(req, res) {
     }
 
     const context = await createContext(externalModules);
-    vm.createContext(context);
+
+    const options = {
+        console: 'inherit',
+        sandbox: context,
+        require: {
+            external: false as boolean | { modules: string[] },
+            builtin: ['*']
+        }
+    };
+
+    if (externalModules.length > 0) {
+        options.require.external = {
+            modules: externalModules
+        };
+    }
+
+    const vm = new NodeVM(options);
 
     try {
         const script = new vm.Script(`module.exports = async function() {${req.body.code}}();`);
@@ -61,7 +78,5 @@ async function run(req, res) {
         return res.status(400).json({ error: errorMsg });
     }
 };
-
-
 
 module.exports = { run }; // Use CommonJS export syntax
