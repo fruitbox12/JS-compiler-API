@@ -53,7 +53,7 @@ async function run(req, res) {
         console: 'inherit',
         sandbox: context,
         require: {
-            external: false as boolean | { modules: string[] },
+            external: false,
             builtin: ['*']
         }
     };
