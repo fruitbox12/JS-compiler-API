@@ -1,7 +1,6 @@
-const vm = require('vm');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');  // Import axios globally if it's commonly used.
+const axios = require('axios'); // Import axios globally if it's commonly used.
 const { NodeVM } = require('vm2');
 
 async function setupModules(externalModules = []) {
@@ -9,7 +8,7 @@ async function setupModules(externalModules = []) {
     for (const moduleName of externalModules) {
         if (!modules[moduleName]) { // Prevent re-importing axios or core modules.
             try {
-                modules[moduleName] = await import(moduleName);
+                modules[moduleName] = require(moduleName);
             } catch (error) {
                 console.error(`Error importing ${moduleName}:`, error);
             }
@@ -67,14 +66,16 @@ async function run(req, res) {
     const vm = new NodeVM(options);
 
     try {
-        const script = new vm.Script(`module.exports = async function() {${req.body.code}}();`);
-        const responseData = await script.runInContext(context, { lineOffset: 0, displayErrors: true });
+        // Wrap code in a module
+        const code = `module.exports = async function() {${req.body.code}}();`;
+        const responseData = await vm.run(code, __dirname);
         return res.status(200).json({ output: responseData });
     } catch (err) {
         // Improved error handling
         const stack = err.stack || '';
         const lineOfError = stack.includes('evalmachine.<anonymous>:') ? stack.split('evalmachine.<anonymous>:')[1].split('\n')[0] : 'Error executing script';
         const errorMsg = `${err.message} at line ${lineOfError}`;
+        console.error('Script execution error:', errorMsg);
         return res.status(400).json({ error: errorMsg });
     }
 };
