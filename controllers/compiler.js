@@ -50,16 +50,14 @@ async function run(req, res) {
         console: 'inherit',
         sandbox: context,
         require: {
-            external: false,
-            builtin: ['*']
+            external: true,
+            builtin: ['*'],
+            root: './',  // Optional: Define the root for modules.
+            mock: {
+                axios: axios // Explicitly provide axios to the VM
+            }
         }
     };
-
-    if (externalModule) {
-        options.require.external = {
-            modules: [externalModule]
-        };
-    }
 
     const vm = new NodeVM(options);
 
