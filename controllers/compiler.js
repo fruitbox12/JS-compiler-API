@@ -4,20 +4,32 @@ const axios = require('axios'); // Import axios globally if it's commonly used.
 const langchain = require('langchain'); // Import langchain
 const { NodeVM } = require('vm2');
 
-async function setupModules(externalModule) {
+async function setupModules(externalModules) {
     const modules = { fs, path, axios, langchain }; // Add langchain to the default modules.
-    if (externalModule && !modules[externalModule]) {
-        try {
-            modules[externalModule] = require(externalModule);
-        } catch (error) {
-            console.error(`Error importing ${externalModule}:`, error);
+
+    if (externalModules) {
+        if (typeof externalModules === 'string') {
+            externalModules = [externalModules]; // Convert string to array for uniform processing
+        }
+
+        if (Array.isArray(externalModules)) {
+            for (const externalModule of externalModules) {
+                if (!modules[externalModule]) {
+                    try {
+                        modules[externalModule] = require(externalModule);
+                    } catch (error) {
+                        console.error(`Error importing ${externalModule}:`, error);
+                    }
+                }
+            }
         }
     }
+
     return modules;
 }
 
-async function createContext(externalModule) {
-    const moduleMap = await setupModules(externalModule);
+async function createContext(externalModules) {
+    const moduleMap = await setupModules(externalModules);
     const internalLogs = [];
 
     return {
@@ -38,14 +50,14 @@ async function run(req, res) {
         return res.status(400).json({ error: 'Missing required parameter: Code is required' });
     }
 
-    let externalModule = '';
+    let externalModules = [];
     try {
-        externalModule = req.body.external ? JSON.parse(req.body.external) : '';
+        externalModules = req.body.external ? JSON.parse(req.body.external) : [];
     } catch (error) {
         return res.status(400).json({ error: 'Invalid external module format' });
     }
 
-    const context = await createContext(externalModule);
+    const context = await createContext(externalModules);
 
     const options = {
         console: 'inherit',
