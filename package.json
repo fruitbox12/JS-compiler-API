@@ -14,11 +14,7 @@
     "axios": "latest",
     "node-fetch": "latest",
     "vm2": "latest",
-    "langchain": "latest",
-    "@langchain/core": "0.1.5",
-    "@langchain/llms-openai": "latest",
-    "@langchain/prompts": "latest",
-    "@langchain/chains": "latest"
+    "langchain": "latest"
   },
   "resolutions": {
     "@langchain/core": "0.1.5"
