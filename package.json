@@ -13,6 +13,7 @@
     "express": "^4.18.1",
     "axios": "latest",
     "node-fetch": "latest",
-    "vm2": "latest"
+    "vm2": "latest",
+    "langchain": "latest"
   }
 }
