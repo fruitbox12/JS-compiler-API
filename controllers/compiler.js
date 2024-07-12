@@ -1,10 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios'); // Import axios globally if it's commonly used.
+const langchain = require('langchain'); // Import langchain
 const { NodeVM } = require('vm2');
 
 async function setupModules(externalModule) {
-    const modules = { fs, path, axios }; // Axios is now a default part of the context.
+    const modules = { fs, path, axios, langchain }; // Add langchain to the default modules.
     if (externalModule && !modules[externalModule]) {
         try {
             modules[externalModule] = require(externalModule);
