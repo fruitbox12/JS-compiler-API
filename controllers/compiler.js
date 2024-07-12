@@ -1,11 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios'); // Import axios globally if it's commonly used.
-const langchain = require('langchain'); // Import langchain
 const { NodeVM } = require('vm2');
 
 async function setupModules(externalModules) {
-    const modules = { fs, path, axios, langchain }; // Add langchain to the default modules.
+    const modules = { fs, path, axios }; // Initialize default modules
 
     if (externalModules) {
         if (typeof externalModules === 'string') {
@@ -23,6 +22,21 @@ async function setupModules(externalModules) {
                 }
             }
         }
+    }
+
+    // Explicitly include langchain and its dependencies
+    try {
+        const langchain = require('langchain');
+        const { OpenAI } = require('langchain/llms/openai');
+        const { PromptTemplate } = require('langchain/prompts');
+        const { LLMChain } = require('langchain/chains');
+        
+        modules['langchain'] = langchain;
+        modules['langchain/llms/openai'] = OpenAI;
+        modules['langchain/prompts'] = PromptTemplate;
+        modules['langchain/chains'] = LLMChain;
+    } catch (error) {
+        console.error('Error importing langchain or its dependencies:', error);
     }
 
     return modules;
