@@ -24,21 +24,6 @@ async function setupModules(externalModules) {
         }
     }
 
-    // Explicitly include langchain and its dependencies
-    try {
-        const langchain = require('langchain');
-        const { OpenAI } = require('langchain/llms/openai');
-        const { PromptTemplate } = require('langchain/prompts');
-        const { LLMChain } = require('langchain/chains');
-        
-        modules['langchain'] = langchain;
-        modules['langchain/llms/openai'] = OpenAI;
-        modules['langchain/prompts'] = PromptTemplate;
-        modules['langchain/chains'] = LLMChain;
-    } catch (error) {
-        console.error('Error importing langchain or its dependencies:', error);
-    }
-
     return modules;
 }
 
