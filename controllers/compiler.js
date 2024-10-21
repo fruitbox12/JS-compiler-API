@@ -2,9 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios'); // Import axios globally if it's commonly used.
 const { NodeVM } = require('vm2');
+const zlib = require('zlib');
 
 async function setupModules(externalModules) {
-    const modules = { fs, path, axios }; // Initialize default modules
+    const modules = { fs, path, axios, zlib }; // Initialize default modules
 
     if (externalModules) {
         if (typeof externalModules === 'string') {
