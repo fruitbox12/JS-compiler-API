@@ -15,7 +15,6 @@
     "axios": "latest",
     "node-fetch": "latest",
     "vm2": "latest",
-    "zlib": "latest",
     "langchain": "latest"
   },
   "resolutions": {
