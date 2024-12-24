@@ -2,10 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios'); // Import axios globally if it's commonly used.
 const { NodeVM } = require('vm2');
-const zlib = require('zlib');
+const { generateText } = require('ai');
+const { openai } = require('@ai-sdk/openai');
 
 async function setupModules(externalModules) {
-    const modules = { fs, path, axios, zlib }; // Initialize default modules
+    const modules = { fs, path, axios, ai, @ai-sdk/openai }; // Initialize default modules
 
     if (externalModules) {
         if (typeof externalModules === 'string') {
@@ -67,8 +68,7 @@ async function run(req, res) {
             builtin: ['*'],
             root: './',  // Optional: Define the root for modules.
             mock: {
-                axios: axios // Explicitly provide axios to the VM
-            }
+                axios: axios            }
         }
     };
 
