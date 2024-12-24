@@ -6,7 +6,7 @@ const { generateText } = require('ai');
 const { openai } = require('@ai-sdk/openai');
 
 async function setupModules(externalModules) {
-    const modules = { fs, path, axios, ai, @ai-sdk/openai }; // Initialize default modules
+    const modules = { fs, path, axios, generateText, openai }; // Initialize default modules
 
     if (externalModules) {
         if (typeof externalModules === 'string') {
