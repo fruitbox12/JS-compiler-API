@@ -1,4 +1,7 @@
 const fs = require('fs');
+const http = require('http');
+const https = require('https');
+
 const path = require('path');
 const axios = require('axios'); // Import axios globally if it's commonly used.
 const { NodeVM } = require('vm2');
@@ -6,7 +9,7 @@ const { generateText } = require('ai');
 const { openai } = require('@ai-sdk/openai');
 
 async function setupModules(externalModules) {
-    const modules = { fs, path, axios, generateText, openai }; // Initialize default modules
+    const modules = { fs, http, https, path, axios, generateText, openai }; // Initialize default modules
 
     if (externalModules) {
         if (typeof externalModules === 'string') {
