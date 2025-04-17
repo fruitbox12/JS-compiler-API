@@ -18,6 +18,7 @@
     "vm2": "latest",
     "undici": "latest",
     "uuid": "latest",
+    "@util.js/node-timers": "latest",
     "http": "latest",
     "https": "latest",
     "langchain": "latest"
