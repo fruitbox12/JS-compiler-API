@@ -16,6 +16,10 @@
     "axios": "latest",
     "node-fetch": "latest",
     "vm2": "latest",
+    "undici": "latest",
+    "uuid": "latest",
+    "http": "latest",
+    "https": "latest",
     "langchain": "latest"
   },
   "resolutions": {
